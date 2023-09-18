@@ -57,18 +57,20 @@ def build_logger(logger_name, logger_filename):
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
 
-    os.makedirs(LOGDIR, exist_ok=True)
-    filename = os.path.join(LOGDIR, logger_filename)
-    handler = logging.handlers.TimedRotatingFileHandler(
-        filename, when="D", utc=True, encoding="utf-8"
-    )
-    handler.setFormatter(formatter)
+    # if LOGDIR is empty, then don't try output log to local file
+    if LOGDIR != "":
+        os.makedirs(LOGDIR, exist_ok=True)
+        filename = os.path.join(LOGDIR, logger_filename)
+        handler = logging.handlers.TimedRotatingFileHandler(
+            filename, when="D", utc=True, encoding="utf-8"
+        )
+        handler.setFormatter(formatter)
 
-    for l in [stdout_logger, stderr_logger, logger]:
-        if l in visited_loggers:
-            continue
-        visited_loggers.add(l)
-        l.addHandler(handler)
+        for l in [stdout_logger, stderr_logger, logger]:
+            if l in visited_loggers:
+                continue
+            visited_loggers.add(l)
+            l.addHandler(handler)
 
     return logger
 
@@ -300,3 +302,18 @@ def get_context_length(config):
         if val is not None:
             return int(rope_scaling_factor * val)
     return 2048
+
+
+def str_to_torch_dtype(dtype: str):
+    import torch
+
+    if dtype is None:
+        return None
+    elif dtype == "float32":
+        return torch.float32
+    elif dtype == "float16":
+        return torch.float16
+    elif dtype == "bfloat16":
+        return torch.bfloat16
+    else:
+        raise ValueError(f"Unrecognized dtype: {dtype}")
